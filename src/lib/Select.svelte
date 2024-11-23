@@ -4,9 +4,10 @@
 	type Props = {
 		items: string[];
 		active: string;
+		onchange: (active: string) => void;
 	};
 
-	let { items, active = $bindable() }: Props = $props();
+	let { items, active, onchange }: Props = $props();
 </script>
 
 <div class="mt-4 inline-block">
@@ -17,6 +18,7 @@
 			<SelectItem
 				onclick={() => {
 					active = item;
+					onchange(item);
 				}}
 				isActive={active == item}
 			>

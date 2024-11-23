@@ -1,11 +1,162 @@
 <script lang="ts">
 	import Select from '$lib/Select.svelte';
 	import ThemeToggle from '$lib/ThemeToggle.svelte';
+	import { relativeTime } from 'svelte-relative-time';
+
+	import { gsap } from 'gsap';
+
+	import { Flip } from 'gsap/Flip';
+	import { tick } from 'svelte';
+
+	gsap.registerPlugin(Flip);
 
 	const { data } = $props();
 
+	let liveHashtags: { tag: string; total_count: number }[] = $state([]);
+
 	let selected = $state('last hour');
-	let tags = $derived(selected == 'last hour' ? data.lastHourTags : data.last24HourTags);
+	let tags = $derived(
+		selected == 'last hour'
+			? data.lastHourTags
+			: selected == 'last day'
+				? data.last24HourTags
+				: liveHashtags
+	);
+
+	let wordCounts = new Map<string, number>();
+	let posts = 0;
+
+	let lastUpdateTime = 0;
+
+	let startTime = 0;
+
+	function secondsToMicroseconds(seconds: number) {
+		return Math.floor(seconds * 1000000);
+	}
+
+	let ws: WebSocket;
+
+	$effect(() => {
+		if (selected === 'live') {
+			startTime = Date.now() * 1000 - secondsToMicroseconds(60);
+			console.log(startTime);
+
+			wordCounts.clear();
+			liveHashtags = [];
+			posts = 0;
+
+			// WebSocket URL from BlueSky
+			const url =
+				'wss://jetstream2.us-east.bsky.network/subscribe?wantedCollections=app.bsky.feed.post&cursor=' +
+				startTime;
+
+			// WebSocket logic
+			ws = new WebSocket(url);
+			ws.onopen = () => {
+				console.log('Connected to BlueSky WebSocket');
+			};
+
+			ws.onmessage = (event) => {
+				const json = JSON.parse(event.data);
+
+				// console.log(json);
+				if (
+					json.kind === 'commit' &&
+					json.commit.collection === 'app.bsky.feed.post' &&
+					json.commit.operation === 'create' &&
+					json.commit.record.text 
+				) {
+					if (data.languageCode !== 'en' && json.commit.record.langs) {
+						// go through all langs and check if any of them match the language code
+						let shouldProcess = false;
+						for (let lang of json.commit.record.langs) {
+							// remove everything after the first - and trim and lowercase
+							const langCode = lang.split('-')[0].toLowerCase().trim();
+							if (langCode === data.languageCode) {
+								shouldProcess = true;
+								break;
+							}
+						}
+
+						if (!shouldProcess) return;
+					}
+
+					// get text of post
+					const text: string = json.commit.record.text;
+
+					// check if text contains #
+					if (!text.includes('#')) {
+						// console.log(json);
+						return;
+					}
+
+					// find all hashtags
+					const hashtags = text.match(/#(\w+)/g);
+
+					hashtags?.forEach((hashtag) => {
+						hashtag = hashtag.toLowerCase().replace('#', '');
+						wordCounts.set(hashtag, (wordCounts.get(hashtag) || 0) + 1);
+					});
+
+					// check if we're up to date
+
+					const postTime = json.time_us;
+					if (Date.now() > lastUpdateTime + 1000 && posts > 100) {
+						lastUpdateTime = Date.now();
+
+						lastUpdateTimestamp = postTime;
+
+						// get most popular hashtags
+						update('live');
+					}
+
+					posts++;
+				}
+			};
+		} else {
+			if(ws) ws.close();
+
+			lastUpdateTimestamp = data.lastUpdateTimestamp;
+		}
+	});
+
+	async function update(select: string) {
+		const state = Flip.getState('.item', {
+			props: 'opacity,y'
+		});
+
+		selected = select;
+
+		if (select === 'live') {
+			liveHashtags = getMostPopularHashtags(50);
+		}
+
+		await tick();
+
+		Flip.from(state, {
+			duration: 0.5,
+			ease: 'power3.inOut',
+			onEnter: (el) => {
+				gsap.from(el, { opacity: 0, y: 20, duration: 0.5 });
+			},
+			onExit: (el: HTMLElement) => {
+				gsap.to(el, { opacity: 0, y: -20, duration: 0.5 });
+			}
+		});
+	}
+
+	function getMostPopularHashtags(num: number) {
+		// get num most popular hashtags with counts
+		const mostPopular = Array.from(wordCounts.entries())
+			.sort((a, b) => b[1] - a[1])
+			.slice(0, num)
+			.map((el) => {
+				return { tag: el[0], total_count: el[1] };
+			});
+		return mostPopular;
+	}
+
+	let lastUpdateTimestamp: number = $state(data.lastUpdateTimestamp);
 </script>
 
 <div class="absolute left-4 right-4 top-4 flex items-start justify-between">
@@ -40,7 +191,11 @@
 		</svg>
 	</div>
 
-	<Select items={['last hour', 'last day']} bind:active={selected} />
+	<Select items={['last hour', 'last day', 'live']} active={selected} onchange={update} />
+
+	<div class="text-xs text-base-700 dark:text-base-300 mt-2">
+		last updated <span use:relativeTime={{ date: lastUpdateTimestamp / 1000 }}></span>
+	</div>
 
 	<div class="mt-4">
 		{#each tags as hashtag}
@@ -51,11 +206,15 @@
 				data-flip-id={hashtag.tag}
 			>
 				<span
-					class="font-semibold text-accent-500 transition-colors duration-150 group-hover:text-cyan-500 dark:text-cyan-400"
+					class="font-semibold text-accent-600 transition-colors duration-150 group-hover:text-cyan-500 dark:text-cyan-400 group-hover:dark:text-cyan-300"
 					>{hashtag.tag}</span
 				>
 				<span class="ml-2 text-xs text-base-700 dark:text-base-300">({hashtag.total_count}x)</span>
 			</a>
 		{/each}
+
+		{#if tags.length === 0}
+			<div class="text-sm font-semibold text-base-700 dark:text-base-300">loading...</div>
+		{/if}
 	</div>
 </div>

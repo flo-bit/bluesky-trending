@@ -34,6 +34,8 @@
 		"@libsql/client": "^0.14.0",
 		"@sveltejs/adapter-static": "^3.0.6",
 		"clsx": "^2.1.1",
+		"gsap": "^3.12.5",
+		"svelte-relative-time": "^0.0.6",
 		"tailwind-merge": "^2.5.4"
 	}
 }

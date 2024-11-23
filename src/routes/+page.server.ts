@@ -1,4 +1,4 @@
-import { getAllLanguages, getTopHashtags } from '$lib';
+import { getAllLanguages, getLastUpdateTimestamp, getTopHashtags } from '$lib';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load() {
@@ -7,5 +7,13 @@ export async function load() {
 	const lastHourTags = await getTopHashtags(1, 'en');
 	const last24HourTags = await getTopHashtags(24, 'en');
 
-	return { languages, lastHourTags, last24HourTags, languageCode: 'en' };
+	const lastUpdateTimestamp = (await getLastUpdateTimestamp()) ?? new Date().getTime() * 1000;
+
+	return {
+		languages,
+		lastHourTags,
+		last24HourTags,
+		languageCode: 'en',
+		lastUpdateTimestamp: lastUpdateTimestamp as number
+	};
 }
