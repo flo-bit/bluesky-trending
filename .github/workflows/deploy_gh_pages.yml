@@ -10,9 +10,19 @@ on:
 jobs:
   build_site:
     runs-on: ubuntu-latest
+
+    env:
+      TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+      TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Verify Environment Variables
+        run: |
+          echo "TURSO_DATABASE_URL is set to: $TURSO_DATABASE_URL"
+          echo "TURSO_AUTH_TOKEN is set to: $TURSO_AUTH_TOKEN"
 
       - name: Install Node.js
         uses: actions/setup-node@v3
@@ -26,8 +36,6 @@ jobs:
       - name: Build
         env:
           BASE_PATH: '/${{ github.event.repository.name }}'
-          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
-          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
         run: npm run build
 
       - name: Upload Artifacts
