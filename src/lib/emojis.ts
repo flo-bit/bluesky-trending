@@ -18,5 +18,6 @@ export const languageEmojis = {
 	fa: '🇮🇷', // Persian (Farsi)
 	th: '🇹🇭', // Thai
 	it: '🇮🇹', // Italian
-	uk: '🇺🇦' // Ukrainian
+	uk: '🇺🇦', // Ukrainian
+	el: '🇬🇷' // Greek
 };
