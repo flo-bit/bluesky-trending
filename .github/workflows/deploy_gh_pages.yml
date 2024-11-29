@@ -12,8 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
-      TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+      API_URL: ${{ secrets.API_URL }}
 
     steps:
       - name: Checkout
