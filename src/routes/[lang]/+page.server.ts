@@ -1,13 +1,16 @@
 import { getAllLanguages, getLastUpdateTimestamp, getTopHashtags } from '$lib';
+import { languageEmojis } from '$lib/emojis.js';
 
 /** @type {import('./$types').PageServerLoad} */
-export async function load() {
+export async function load({ params }) {
+	const languageCode = params.lang;
+
 	const languages = (await getAllLanguages())
 		.sort((a: string, b: string) => a.localeCompare(b))
-		.filter((language: string) => language !== 'br');
+		.filter((lang) => languageEmojis[lang]);
 
-	const lastHourTags = await getTopHashtags(1, 'en');
-	const last24HourTags = await getTopHashtags(24, 'en');
+	const lastHourTags = await getTopHashtags(1, languageCode);
+	const last24HourTags = await getTopHashtags(24, languageCode);
 
 	const lastUpdateTimestamp = (await getLastUpdateTimestamp()) ?? new Date().getTime() * 1000;
 
@@ -15,7 +18,7 @@ export async function load() {
 		languages,
 		lastHourTags,
 		last24HourTags,
-		languageCode: 'en',
+		languageCode,
 		lastUpdateTimestamp: lastUpdateTimestamp as number
 	};
 }

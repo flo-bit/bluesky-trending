@@ -1,6 +1,29 @@
 import adapter from '@sveltejs/adapter-static';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
+export const languageEmojis = {
+	zh: '🇨🇳', // Chinese
+	ur: '🇵🇰', // Urdu
+	en: '🇺🇸', // English
+	es: '🇪🇸', // Spanish
+	pt: '🇧🇷', // Portuguese
+	hi: '🇮🇳', // Hindi
+	ar: '🇸🇦', // Arabic
+	bn: '🇧🇩', // Bengali
+	ru: '🇷🇺', // Russian
+	ja: '🇯🇵', // Japanese
+	id: '🇮🇩', // Indonesian
+	fr: '🇫🇷', // French
+	de: '🇩🇪', // German
+	tr: '🇹🇷', // Turkish
+	vi: '🇻🇳', // Vietnamese
+	ko: '🇰🇷', // Korean
+	fa: '🇮🇷', // Persian (Farsi)
+	th: '🇹🇭', // Thai
+	it: '🇮🇹', // Italian
+	uk: '🇺🇦' // Ukrainian
+};
+
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	// Consult https://svelte.dev/docs/kit/integrations
@@ -14,6 +37,9 @@ const config = {
 		adapter: adapter(),
 		paths: {
 			base: '/bluesky-trending'
+		},
+		prerender: {
+			entries: ['/', ...Object.keys(languageEmojis).map((lang) => `/${lang}`)]
 		}
 	}
 };
