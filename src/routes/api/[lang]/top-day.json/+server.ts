@@ -1,3 +1,5 @@
+export const prerender = true;
+
 import { getLastUpdateTimestamp, getTopHashtagsLast24Hours } from '$lib';
 import { json, type RequestHandler } from '@sveltejs/kit';
 

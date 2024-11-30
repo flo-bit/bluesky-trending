@@ -41,7 +41,13 @@ const config = {
 			base: '/bluesky-trending'
 		},
 		prerender: {
-			entries: ['/', ...Object.keys(languageEmojis).map((lang) => `/${lang}`)]
+			entries: [
+				'/',
+				...Object.keys(languageEmojis).map((lang) => `/${lang}`),
+				'/api/languages.json',
+				...Object.keys(languageEmojis).map((lang) => `/api/${lang}/top-day.json`),
+				...Object.keys(languageEmojis).map((lang) => `/api/${lang}/top-last-hour.json`)
+			]
 		}
 	}
 };
